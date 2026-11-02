@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+test_*.db*
+blood_bank.db-wal
+blood_bank.db-shm

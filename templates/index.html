@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Blood Bank Management System | Review 2</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf2f2',
+              100: '#fde8e8',
+              500: '#9b1c1c',
+              600: '#861919',
+              700: '#6f1414',
+              800: '#541010',
+              900: '#3d0a0a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tab-active {
+      border-bottom: 2px solid #9b1c1c;
+      color: #9b1c1c;
+      font-weight: 600;
+    }
+    .badge-critical { background-color: #fee2e2; color: #991b1b; }
+    .badge-urgent { background-color: #fef3c7; color: #92400e; }
+    .badge-normal { background-color: #e0e7ff; color: #3730a3; }
+    .badge-available { background-color: #d1fae5; color: #065f46; }
+    .badge-issued { background-color: #e2e8f0; color: #475569; }
+    .badge-discarded { background-color: #fee2e2; color: #b91c1c; }
+    .badge-quarantined { background-color: #fef3c7; color: #b45309; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- TOP HEADER -->
+  <header class="bg-brand-700 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 p-2 rounded-xl backdrop-blur-sm">
+          <i data-lucide="droplet" class="w-7 h-7 text-red-200 fill-red-400"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Smart Blood Bank Management System</h1>
+          <p class="text-xs text-red-200">
+            Database Systems Course Project | Review 2 &bull; 
+            <span class="font-medium text-white">Siddhesh Srinivasan (24BYB0035)</span> &bull; 
+            Guide: Dr. Thanga Mariappan L
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="runConcurrencyTestModal()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          Test ACID Concurrency
+        </button>
+        <button onclick="resetSeedData()" class="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-white/20">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          Reset Sample Data
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="bg-brand-800/80 backdrop-blur border-t border-brand-600/50">
+      <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto text-sm">
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap tab-active">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard & Inventory
+        </button>
+        <button onclick="switchTab('allocation')" id="tab-btn-allocation" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="git-merge" class="w-4 h-4 text-emerald-300"></i> Smart Allocation Engine (FEFO)
+        </button>
+        <button onclick="switchTab('quality')" id="tab-btn-quality" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="shield-check" class="w-4 h-4 text-blue-300"></i> Quality Lab Clearance
+        </button>
+        <button onclick="switchTab('donors')" id="tab-btn-donors" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="users" class="w-4 h-4"></i> Donors & Donations
+        </button>
+        <button onclick="switchTab('requests')" id="tab-btn-requests" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="building-2" class="w-4 h-4"></i> Hospitals & Requests
+        </button>
+        <button onclick="switchTab('reports')" id="tab-btn-reports" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="file-text" class="w-4 h-4"></i> Slide 9 Reports
+        </button>
+        <button onclick="switchTab('concurrency')" id="tab-btn-concurrency" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-300"></i> ACID & Concurrency Lab
+        </button>
+        <button onclick="switchTab('schema')" id="tab-btn-schema" class="px-4 py-2.5 text-white/90 hover:text-white border-b-2 border-transparent font-medium flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="database" class="w-4 h-4 text-purple-300"></i> 3NF Relational Model
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- KPI CARDS -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Available Units</span>
+          <i data-lucide="archive" class="w-4 h-4 text-emerald-600"></i>
+        </div>
+        <div id="stat-available-units" class="text-2xl font-bold text-slate-900">-</div>
+        <p class="text-xs text-slate-400 mt-1">Ready for issuance</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Pending Requests</span>
+          <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+        </div>
+        <div id="stat-pending-requests" class="text-2xl font-bold text-slate-900">-</div>
+        <p class="text-xs text-slate-400 mt-1">Awaiting allocation</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Registered Donors</span>
+          <i data-lucide="heart" class="w-4 h-4 text-rose-600"></i>
+        </div>
+        <div id="stat-total-donors" class="text-2xl font-bold text-slate-900">-</div>
+        <p class="text-xs text-slate-400 mt-1">Active donor pool</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Expiring in &le; 7 Days</span>
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i>
+        </div>
+        <div id="stat-nearing-expiry" class="text-2xl font-bold text-red-600">-</div>
+        <p class="text-xs text-slate-400 mt-1">FEFO top priority</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Allocations Made</span>
+          <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600"></i>
+        </div>
+        <div id="stat-total-allocations" class="text-2xl font-bold text-slate-900">-</div>
+        <p class="text-xs text-slate-400 mt-1">Units issued to hospitals</p>
+      </div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD & INVENTORY -->
+    <div id="view-dashboard" class="tab-view space-y-6">
+      <!-- Blood Group Stock Grid -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="boxes" class="w-5 h-5 text-brand-600"></i>
+              Live ABO Blood Group Inventory
+            </h2>
+            <p class="text-xs text-slate-500">Units currently available, unexpired, and cleared by laboratory quality inspection.</p>
+          </div>
+          <button onclick="loadInventory()" class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Stock
+          </button>
+        </div>
+
+        <div id="blood-group-cards-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Blood Units Detailed Table -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="list" class="w-5 h-5 text-brand-600"></i>
+              Blood Unit Registry
+            </h2>
+            <p class="text-xs text-slate-500">Track each component unit, shelf life, quality clearance, and allocation state.</p>
+          </div>
+          <div class="flex gap-2 text-xs">
+            <select id="unit-filter-status" onchange="loadUnitsTable()" class="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50">
+              <option value="">All Statuses</option>
+              <option value="AVAILABLE" selected>Available Only</option>
+              <option value="ISSUED">Issued</option>
+              <option value="DISCARDED">Discarded</option>
+              <option value="QUARANTINED">Quarantined</option>
+            </select>
+            <select id="unit-filter-group" onchange="loadUnitsTable()" class="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50">
+              <option value="">All Blood Groups</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+                <th class="py-2.5 px-3">Unit ID</th>
+                <th class="py-2.5 px-3">Blood Group</th>
+                <th class="py-2.5 px-3">Donor</th>
+                <th class="py-2.5 px-3">Donated On</th>
+                <th class="py-2.5 px-3">Volume</th>
+                <th class="py-2.5 px-3">Expiry Date</th>
+                <th class="py-2.5 px-3">FEFO Countdown</th>
+                <th class="py-2.5 px-3">QC Status</th>
+                <th class="py-2.5 px-3">Unit Status</th>
+              </tr>
+            </thead>
+            <tbody id="units-table-body" class="divide-y divide-slate-100">
+              <tr><td colspan="9" class="text-center py-4 text-slate-400">Loading units...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SMART ALLOCATION ENGINE (Slides 4, 5, 8) -->
+    <div id="view-allocation" class="tab-view hidden space-y-6">
+      <div class="bg-emerald-950 text-emerald-100 p-5 rounded-xl shadow border border-emerald-800">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="git-merge" class="w-5 h-5 text-emerald-400"></i>
+              Smart Allocation Engine (FEFO + Concurrency Protection)
+            </h2>
+            <p class="text-xs text-emerald-300 mt-1">
+              Implements Slide 8 FEFO matching (earliest expiring unexpired units first) + Slide 4 & 5 Atomic Transaction with rowcount validation:
+              <code class="bg-black/40 px-2 py-0.5 rounded text-emerald-200 font-mono text-[11px]">conn.execute("BEGIN IMMEDIATE")</code> and 
+              <code class="bg-black/40 px-2 py-0.5 rounded text-emerald-200 font-mono text-[11px]">UPDATE blood_unit SET status = 'ISSUED' WHERE unit_id = ? AND status = 'AVAILABLE'</code>.
+            </p>
+          </div>
+          <span class="bg-emerald-800/80 text-emerald-200 text-xs px-2.5 py-1 rounded-full font-mono border border-emerald-700">Slide 4, 5 & 8</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: Pending Hospital Requests -->
+        <div class="lg:col-span-5 bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-4 h-4 text-brand-600"></i>
+              Select Pending Request
+            </h3>
+            <button onclick="loadPendingRequestsForAllocation()" class="text-xs text-brand-600 hover:text-brand-800 font-medium">Refresh</button>
+          </div>
+          <p class="text-xs text-slate-500">Click a request to evaluate compatible units, preview FEFO prioritization, and execute atomic allocation.</p>
+
+          <div id="allocation-requests-list" class="space-y-2 max-h-[460px] overflow-y-auto">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Right: Allocation Preview & Execution -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-5">
+          <div id="allocation-empty-state" class="py-16 text-center text-slate-400">
+            <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
+            <p class="text-sm font-medium">Select a pending request from the left to preview eligible blood units.</p>
+          </div>
+
+          <div id="allocation-details-card" class="hidden space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <span id="alloc-detail-urgency" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase">CRITICAL</span>
+                <h3 id="alloc-detail-hospital" class="font-bold text-slate-900 text-base mt-1">Apollo Multispeciality</h3>
+                <p id="alloc-detail-sub" class="text-xs text-slate-500">Request #1 &bull; Recipient Group: <strong id="alloc-detail-group" class="text-brand-600">O+</strong></p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-500">Units Needed:</span>
+                <div id="alloc-detail-units" class="text-xl font-bold text-slate-900">2</div>
+              </div>
+            </div>
+
+            <!-- Matched FEFO Units Preview -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  Compatible Available Units (FEFO Ordered)
+                </h4>
+                <span id="alloc-compatible-count" class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">0 found</span>
+              </div>
+              
+              <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th class="py-2 px-3">Unit ID</th>
+                      <th class="py-2 px-3">Donor Group</th>
+                      <th class="py-2 px-3">Expiry Date</th>
+                      <th class="py-2 px-3">Shelf Life Left</th>
+                      <th class="py-2 px-3">FEFO Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alloc-eligible-table-body" class="divide-y divide-slate-100">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Action button -->
+            <div class="pt-2">
+              <button id="btn-execute-allocation" onclick="submitAllocation()" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2 shadow transition">
+                <i data-lucide="check-check" class="w-4 h-4"></i>
+                Commit Atomic Allocation (BEGIN IMMEDIATE)
+              </button>
+            </div>
+
+            <!-- Live Transaction Execution Log -->
+            <div id="alloc-transaction-log" class="hidden p-3 bg-slate-900 text-slate-100 rounded-lg font-mono text-xs space-y-1">
+              <div class="text-emerald-400 font-bold flex items-center gap-1">
+                <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+                Transaction Audit Trail:
+              </div>
+              <div id="alloc-log-content" class="text-slate-300 text-[11px] leading-relaxed"></div>
+            </div>
+
+            <!-- Past allocations for this request -->
+            <div id="past-allocations-section" class="pt-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Already Allocated to this Request</h4>
+              <div id="past-allocations-list" class="text-xs text-slate-600 space-y-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: QUALITY LAB CLEARANCE (Slide 2 & 3) -->
+    <div id="view-quality" class="tab-view hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="microscope" class="w-5 h-5 text-blue-600"></i>
+              Laboratory Quality & Component Clearance
+            </h2>
+            <p class="text-xs text-slate-500">
+              Slide 3 Design Rule: "BLOOD_QUALITY_CHECK stores repeatable inspection history; failed or unresolved checks must block release."
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Form to submit inspection -->
+          <div class="lg:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
+              Record Laboratory Inspection
+            </h3>
+            <form id="form-quality-check" onsubmit="submitQualityCheck(event)" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Target Blood Unit</label>
+                <select id="qc-unit-id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                  <option value="">Select blood unit to inspect...</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Checked By (Pathologist / Technician)</label>
+                <input id="qc-checked-by" type="text" value="Dr. Meera Rao (QC Officer)" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Quality Status</label>
+                  <select id="qc-status" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                    <option value="PASSED" selected>PASSED</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="PENDING">PENDING</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Action Taken</label>
+                  <select id="qc-action" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                    <option value="RELEASED" selected>RELEASED</option>
+                    <option value="QUARANTINED">QUARANTINED</option>
+                    <option value="DISCARDED">DISCARDED</option>
+                    <option value="RETEST_REQUIRED">RETEST_REQUIRED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Defect Detected?</label>
+                <select id="qc-defect" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                  <option value="0" selected>No (Morphology clear, viral screen negative)</option>
+                  <option value="1">Yes (Turbidity, hemolysis, or positive marker)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Abnormality / Laboratory Notes</label>
+                <textarea id="qc-notes" rows="2" placeholder="e.g. Sterile culture, serology negative for HIV/HBsAg/HCV" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"></textarea>
+              </div>
+
+              <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow transition">
+                Submit Quality Inspection
+              </button>
+            </form>
+          </div>
+
+          <!-- Quality checks history table -->
+          <div class="lg:col-span-7">
+            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
+              Recent Quality Inspections & Audit Log
+            </h3>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 text-slate-600 font-semibold">
+                  <tr>
+                    <th class="py-2 px-3">Unit</th>
+                    <th class="py-2 px-3">Date</th>
+                    <th class="py-2 px-3">Inspector</th>
+                    <th class="py-2 px-3">QC Status</th>
+                    <th class="py-2 px-3">Action</th>
+                    <th class="py-2 px-3">Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="qc-history-table-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="6" class="text-center py-4 text-slate-400">Loading inspection history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: DONORS & SCREENING (Slide 2) -->
+    <div id="view-donors" class="tab-view hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Register Donor & Record Donation -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Register Donor Card -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <i data-lucide="user-plus" class="w-4 h-4 text-brand-600"></i>
+              1. Register New Donor
+            </h3>
+            <p class="text-xs text-slate-500 mb-3">Enforces 3NF CHECK constraint on valid ABO/Rh blood groups.</p>
+            <form id="form-register-donor" onsubmit="submitRegisterDonor(event)" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+                <input id="donor-name" type="text" required placeholder="e.g. Ramesh Kumar" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Blood Group</label>
+                  <select id="donor-group" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                    <option value="O+">O+</option>
+                    <option value="O-">O- (Universal Donor)</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+ (Universal Recipient)</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <input id="donor-phone" type="text" required placeholder="+91-9876543210" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg text-xs transition">
+                Register Donor
+              </button>
+            </form>
+          </div>
+
+          <!-- Record Donation Card -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <i data-lucide="droplets" class="w-4 h-4 text-rose-600"></i>
+              2. Screen & Record Donation
+            </h3>
+            <p class="text-xs text-slate-500 mb-3">Slide 2 & 9: Auto-creates BLOOD_UNIT and updates donor's last_donated date via trigger.</p>
+            <form id="form-record-donation" onsubmit="submitRecordDonation(event)" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Select Donor</label>
+                <select id="donation-donor-id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                  <option value="">Select donor...</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Volume (mL)</label>
+                  <input id="donation-volume" type="number" value="450" min="100" max="500" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Hemoglobin (g/dL)</label>
+                  <input id="donation-hb" type="number" step="0.1" value="14.2" min="12.0" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                  <span class="text-[10px] text-slate-400">Must be &ge; 12.0 g/dL</span>
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition">
+                Record Donation & Generate Unit
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Donors List -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-brand-600"></i>
+              Registered Donors Directory
+            </h3>
+            <button onclick="loadDonors()" class="text-xs text-brand-600 hover:text-brand-800 font-medium">Refresh</button>
+          </div>
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3">ID</th>
+                  <th class="py-2.5 px-3">Full Name</th>
+                  <th class="py-2.5 px-3">Blood Group</th>
+                  <th class="py-2.5 px-3">Phone</th>
+                  <th class="py-2.5 px-3">Last Donated</th>
+                  <th class="py-2.5 px-3">Total Donations</th>
+                </tr>
+              </thead>
+              <tbody id="donors-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="6" class="text-center py-4 text-slate-400">Loading donors...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: HOSPITALS & REQUESTS (Slide 3) -->
+    <div id="view-requests" class="tab-view hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Create Request & Register Hospital -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Submit Blood Request -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4 text-brand-600"></i>
+              Create Hospital Blood Request
+            </h3>
+            <p class="text-xs text-slate-500 mb-3">Slide 3: BLOOD_REQUEST with urgency ranking and fulfillment tracking.</p>
+            <form id="form-create-request" onsubmit="submitCreateRequest(event)" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Hospital</label>
+                <select id="req-hospital-id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                  <option value="">Select hospital...</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Blood Group Needed</label>
+                  <select id="req-blood-group" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Units Needed</label>
+                  <input id="req-units" type="number" min="1" max="10" value="1" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Urgency Level</label>
+                <select id="req-urgency" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                  <option value="CRITICAL">CRITICAL (Emergency / Surgery)</option>
+                  <option value="URGENT">URGENT (Within 24 hours)</option>
+                  <option value="NORMAL" selected>NORMAL (Standard supply)</option>
+                </select>
+              </div>
+              <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg text-xs transition">
+                Submit Request
+              </button>
+            </form>
+          </div>
+
+          <!-- Register Hospital -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <i data-lucide="building" class="w-4 h-4 text-slate-600"></i>
+              Register New Hospital
+            </h3>
+            <form id="form-register-hospital" onsubmit="submitRegisterHospital(event)" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Hospital Name</label>
+                <input id="hosp-name" type="text" required placeholder="e.g. Kauvery Hospital" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">City</label>
+                  <input id="hosp-city" type="text" required value="Chennai" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Phone</label>
+                  <input id="hosp-phone" type="text" required placeholder="+91-44-..." class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition">
+                Register Hospital
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Requests Tracker Table -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-brand-600"></i>
+              Active Blood Requests Pipeline
+            </h3>
+            <button onclick="loadRequestsTable()" class="text-xs text-brand-600 hover:text-brand-800 font-medium">Refresh</button>
+          </div>
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2 px-3">Req ID</th>
+                  <th class="py-2 px-3">Hospital</th>
+                  <th class="py-2 px-3">Group</th>
+                  <th class="py-2 px-3">Urgency</th>
+                  <th class="py-2 px-3">Needed</th>
+                  <th class="py-2 px-3">Allocated</th>
+                  <th class="py-2 px-3">Status</th>
+                  <th class="py-2 px-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="requests-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="text-center py-4 text-slate-400">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: SLIDE 9 ANALYTICAL REPORTS -->
+    <div id="view-reports" class="tab-view hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-brand-600"></i>
+              Slide 9: Database Integrity and Reporting
+            </h2>
+            <p class="text-xs text-slate-500">The 4 official analytical outputs specified in presentation Slide 9.</p>
+          </div>
+          <button onclick="loadSlide9Reports()" class="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Reports
+          </button>
+        </div>
+
+        <!-- Report Tabs -->
+        <div class="flex border-b border-slate-200 mb-4 text-xs font-semibold gap-4">
+          <button onclick="switchReportTab('rep-inventory')" id="rep-btn-inventory" class="pb-2 border-b-2 border-brand-600 text-brand-600">1. Inventory Report</button>
+          <button onclick="switchReportTab('rep-expiry')" id="rep-btn-expiry" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800">2. Expiry Report (FEFO)</button>
+          <button onclick="switchReportTab('rep-quality')" id="rep-btn-quality" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800">3. Quality & Hold Report</button>
+          <button onclick="switchReportTab('rep-requests')" id="rep-btn-requests" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800">4. Request Fulfillment Report</button>
+        </div>
+
+        <!-- 1. Inventory Report -->
+        <div id="rep-inventory" class="report-section space-y-3">
+          <p class="text-xs text-slate-600 font-medium">"Available units will be grouped by blood group."</p>
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3">Blood Group</th>
+                  <th class="py-2.5 px-3">Available Units</th>
+                  <th class="py-2.5 px-3">Total Volume (mL)</th>
+                  <th class="py-2.5 px-3">Earliest Expiry</th>
+                  <th class="py-2.5 px-3">Quality Cleared Units</th>
+                </tr>
+              </thead>
+              <tbody id="rep-inventory-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Expiry Report (FEFO) -->
+        <div id="rep-expiry" class="report-section hidden space-y-3">
+          <p class="text-xs text-slate-600 font-medium">"Eligible units which are approaching expiry will be prioritized using FEFO."</p>
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3">Unit ID</th>
+                  <th class="py-2.5 px-3">Blood Group</th>
+                  <th class="py-2.5 px-3">Donor</th>
+                  <th class="py-2.5 px-3">Expiry Date</th>
+                  <th class="py-2.5 px-3">Days Remaining</th>
+                  <th class="py-2.5 px-3">Urgency Category</th>
+                </tr>
+              </thead>
+              <tbody id="rep-expiry-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Quality Report -->
+        <div id="rep-quality" class="report-section hidden space-y-4">
+          <p class="text-xs text-slate-600 font-medium">"Pending checks, failed checks, quarantined units and action history are here."</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-center">
+              <div id="rep-qc-pending" class="text-xl font-bold text-amber-700">0</div>
+              <div class="text-[11px] text-amber-600 font-medium">Pending Initial Check</div>
+            </div>
+            <div class="bg-rose-50 border border-rose-200 p-3 rounded-lg text-center">
+              <div id="rep-qc-quarantined" class="text-xl font-bold text-rose-700">0</div>
+              <div class="text-[11px] text-rose-600 font-medium">Quarantined Units</div>
+            </div>
+            <div class="bg-slate-100 border border-slate-300 p-3 rounded-lg text-center">
+              <div id="rep-qc-discarded" class="text-xl font-bold text-slate-700">0</div>
+              <div class="text-[11px] text-slate-600 font-medium">Discarded Units</div>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-center">
+              <div id="rep-qc-passed" class="text-xl font-bold text-emerald-700">0</div>
+              <div class="text-[11px] text-emerald-600 font-medium">Passed Quality Checks</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Request Fulfillment Report -->
+        <div id="rep-requests" class="report-section hidden space-y-3">
+          <p class="text-xs text-slate-600 font-medium">"Requested quantity is compared with allocated quantity."</p>
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold">
+                <tr>
+                  <th class="py-2.5 px-3">Req ID</th>
+                  <th class="py-2.5 px-3">Hospital</th>
+                  <th class="py-2.5 px-3">City</th>
+                  <th class="py-2.5 px-3">Blood Group</th>
+                  <th class="py-2.5 px-3">Requested</th>
+                  <th class="py-2.5 px-3">Allocated</th>
+                  <th class="py-2.5 px-3">Unfulfilled</th>
+                  <th class="py-2.5 px-3">Fulfillment %</th>
+                  <th class="py-2.5 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="rep-requests-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: ACID & CONCURRENCY LAB (Slides 4, 5, 6) -->
+    <div id="view-concurrency" class="tab-view hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+        <div class="flex flex-wrap justify-between items-start gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="cpu" class="w-5 h-5 text-amber-500"></i>
+              Live ACID Concurrency & Race Condition Laboratory
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">
+              Demonstrates Slides 4, 5 & 6: Two concurrent hospital threads (Trauma Center vs. Apollo Apex) simultaneously attempt to claim the sole available O- unit at the exact same millisecond.
+            </p>
+          </div>
+          <button id="btn-run-race-test" onclick="executeConcurrencyTestLive()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs shadow flex items-center gap-2 transition">
+            <i data-lucide="play" class="w-4 h-4 fill-slate-950"></i>
+            Run Live Concurrency Race Test
+          </button>
+        </div>
+
+        <!-- ACID Properties Visual Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <span class="font-bold text-red-700 flex items-center gap-1.5"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Atomicity</span>
+            <p class="text-red-900 text-[11px] mt-1">All unit allocations succeed together, or transaction rolls back completely.</p>
+          </div>
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <span class="font-bold text-blue-700 flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5"></i> Consistency</span>
+            <p class="text-blue-900 text-[11px] mt-1">Keys, CHECK constraints, and business rules preserve valid database states.</p>
+          </div>
+          <div class="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+            <span class="font-bold text-purple-700 flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Isolation</span>
+            <p class="text-purple-900 text-[11px] mt-1">Concurrent transactions cannot double-claim the same unit (`rowcount == 1`).</p>
+          </div>
+          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <span class="font-bold text-emerald-700 flex items-center gap-1.5"><i data-lucide="hard-drive" class="w-3.5 h-3.5"></i> Durability</span>
+            <p class="text-emerald-900 text-[11px] mt-1">Committed allocation records persist during application restarts.</p>
+          </div>
+        </div>
+
+        <!-- Concurrency Test Output Panel -->
+        <div id="concurrency-results-panel" class="hidden space-y-4">
+          <div id="concurrency-verdict-banner" class="p-4 rounded-xl border font-semibold text-sm flex items-center gap-3">
+            <!-- Populated by JS -->
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="p-4 bg-slate-900 text-slate-100 rounded-xl font-mono space-y-2">
+              <div class="text-emerald-400 font-bold flex items-center gap-1.5">
+                <i data-lucide="terminal" class="w-4 h-4"></i>
+                Thread Execution Details
+              </div>
+              <div id="concurrency-threads-log" class="text-[11px] text-slate-300 space-y-2"></div>
+            </div>
+
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <i data-lucide="database" class="w-4 h-4 text-brand-600"></i>
+                Database State Post-Concurrency
+              </div>
+              <div id="concurrency-db-state" class="text-slate-600 text-xs space-y-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 8: ARCHITECTURE & 3NF SCHEMA (Slide 3 & 7) -->
+    <div id="view-schema" class="tab-view hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="git-branch" class="w-5 h-5 text-purple-600"></i>
+            Relational Architecture & Third Normal Form (3NF) Normalization
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">
+            As detailed in Slide 7 of Review 2 presentation.
+          </p>
+        </div>
+
+        <!-- 3NF Justification Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <h4 class="font-bold text-slate-900 mb-1">1NF (First Normal Form)</h4>
+            <p class="text-slate-600 leading-relaxed">Each field stores one atomic value. No repeating groups or comma-separated lists exist in any column. Blood units, donations, and quality checks are separated into discrete rows.</p>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <h4 class="font-bold text-slate-900 mb-1">2NF (Second Normal Form)</h4>
+            <p class="text-slate-600 leading-relaxed">Every non-key attribute is fully functionally dependent on the primary key. In the <code class="text-brand-600 font-mono">COMPATIBILITY</code> table with composite key <code class="font-mono">(recipient_group, donor_group)</code>, there are no partial dependencies.</p>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <h4 class="font-bold text-slate-900 mb-1">3NF (Third Normal Form)</h4>
+            <p class="text-slate-600 leading-relaxed">Non-key attributes depend only on the candidate key and nothing else (no transitive dependencies). Donor phone is in <code class="text-brand-600 font-mono">DONOR</code>, not duplicated inside <code class="font-mono">DONATION</code> or <code class="font-mono">BLOOD_UNIT</code>.</p>
+          </div>
+        </div>
+
+        <!-- ER Diagram Tables Summary -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4 text-brand-600"></i>
+            Relational Tables & Constraints (Slide 3)
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">DONOR</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">donor_id</code></li>
+                <li>full_name, phone</li>
+                <li>blood_group (CHECK ABO/Rh)</li>
+                <li>last_donated (Updated by trigger)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">DONATION</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">donation_id</code></li>
+                <li>FK: <code class="font-mono">donor_id</code></li>
+                <li>donated_on, volume_ml (> 0)</li>
+                <li>hb_level (CHECK &ge; 12.0)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">BLOOD_UNIT</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">unit_id</code></li>
+                <li>FK: <code class="font-mono">donation_id</code></li>
+                <li>blood_group, expiry_date</li>
+                <li>status (CHECK AVAILABLE, etc.)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">BLOOD_QUALITY_CHECK</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">check_id</code></li>
+                <li>FK: <code class="font-mono">unit_id</code></li>
+                <li>quality_status (PASSED/FAILED)</li>
+                <li>action_taken (RELEASED/HOLD)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">HOSPITAL</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">hospital_id</code></li>
+                <li>name, city, phone</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">BLOOD_REQUEST</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">request_id</code></li>
+                <li>FK: <code class="font-mono">hospital_id</code></li>
+                <li>blood_group, units_needed</li>
+                <li>urgency (CRITICAL, URGENT, NORMAL)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">ALLOCATION</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">alloc_id</code></li>
+                <li>FK: <code class="font-mono">request_id</code></li>
+                <li>FK: <code class="font-mono">unit_id</code> (UNIQUE)</li>
+                <li>allocated_on (TIMESTAMP)</li>
+              </ul>
+            </div>
+            <div class="border border-slate-200 p-3 rounded-lg bg-slate-50">
+              <strong class="text-brand-700 font-mono">COMPATIBILITY</strong>
+              <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                <li>PK: <code class="font-mono">recipient_group</code></li>
+                <li>PK: <code class="font-mono">donor_group</code></li>
+                <li>(Composite Key, ABO/Rh rules)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      Smart Blood Bank Management System &bull; Database Systems Course Project (Review 2) &bull; Siddhesh Srinivasan (24BYB0035)
+    </div>
+  </footer>
+
+  <!-- App JS -->
+  <script src="/static/js/app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
